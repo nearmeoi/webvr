@@ -1,11 +1,20 @@
 import React, { useEffect, useState, useRef } from 'react';
 import 'aframe';
-import { FaVrCardboard, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
+import { FaVrCardboard } from 'react-icons/fa';
 
 // --- DEFINISI KOMPONEN A-FRAME (DILUAR REACT) ---
 // Ini wajib ditaruh di sini agar terdaftar SEBELUM scene dimuat
-if (typeof (window as any).AFRAME !== 'undefined') {
-  const AFRAME = (window as any).AFRAME;
+declare global {
+  interface Window {
+    AFRAME?: {
+      registerComponent: (name: string, definition: object) => void;
+      components: Record<string, unknown>;
+    };
+  }
+}
+
+if (typeof window.AFRAME !== 'undefined') {
+  const AFRAME = window.AFRAME;
 
   // Hapus definisi lama jika ada (Hot Reload Safe)
   ['vid-handler', 'audio-handler', 'info-toggler', 'close-handler', 'open-video', 'scene-changer'].forEach(name => {
@@ -43,7 +52,13 @@ if (typeof (window as any).AFRAME !== 'undefined') {
     init: function () {
       this.onClick = () => {
         const v = document.querySelector('#promovideo') as HTMLVideoElement;
-        if (v) { v.paused ? v.play() : v.pause(); }
+        if (v) {
+          if (v.paused) {
+            v.play();
+          } else {
+            v.pause();
+          }
+        }
       };
       this.el.addEventListener('click', this.onClick);
     },
@@ -111,14 +126,14 @@ const App: React.FC = () => {
     // Event Listeners untuk komunikasi A-Frame -> React
     const handleToggleInfo = () => setShowInfo(prev => !prev);
 
-    const handleClosePanel = (e: any) => {
+    const handleClosePanel = (e: CustomEvent<string>) => {
       const target = e.detail;
       if (target === 'info') setShowInfo(false);
       if (target === 'video') setShowVideo(false);
     };
 
     const handleOpenVideo = () => setShowVideo(true);
-    const handleChangeScene = (e: any) => changeScene(e.detail);
+    const handleChangeScene = (e: CustomEvent<string>) => changeScene(e.detail);
 
     const handleToggleAudio = () => {
       setIsMuted(prev => {
